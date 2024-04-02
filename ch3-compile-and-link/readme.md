@@ -1,8 +1,10 @@
 ## 3.1
 
 ```shell
-gcc -c hello.c
+gcc -g -c hello.c
 ```
+
+add -g is good for debug. For example, without -g the `objdump -S hello.o` won't indicate which c statement is related to the asm instructions.
 
 check file header:
 
@@ -23,14 +25,14 @@ ELF 头：
   版本:                              0x1
   入口点地址：               0x0
   程序头起点：          0 (bytes into file)
-  Start of section headers:          600 (bytes into file)
+  Start of section headers:          2096 (bytes into file)
   标志：             0x0
   Size of this header:               64 (bytes)
   Size of program headers:           0 (bytes)
   Number of program headers:         0
   Size of section headers:           64 (bytes)
-  Number of section headers:         14
-  Section header string table index: 13
+  Number of section headers:         23
+  Section header string table index: 22
 ```
 
 check section header table:
@@ -40,24 +42,33 @@ readelf -SW hello.o
 ```
 
 ```shell
-There are 14 section headers, starting at offset 0x258:
+There are 23 section headers, starting at offset 0x830:
 
 节头：
   [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
   [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
   [ 1] .text             PROGBITS        0000000000000000 000040 00001e 00  AX  0   0  1
-  [ 2] .rela.text        RELA            0000000000000000 000198 000030 18   I 11   1  8
+  [ 2] .rela.text        RELA            0000000000000000 000500 000030 18   I 20   1  8
   [ 3] .data             PROGBITS        0000000000000000 00005e 000000 00  WA  0   0  1
   [ 4] .bss              NOBITS          0000000000000000 00005e 000000 00  WA  0   0  1
   [ 5] .rodata           PROGBITS        0000000000000000 00005e 00000d 00   A  0   0  1
-  [ 6] .comment          PROGBITS        0000000000000000 00006b 00002c 01  MS  0   0  1
-  [ 7] .note.GNU-stack   PROGBITS        0000000000000000 000097 000000 00      0   0  1
-  [ 8] .note.gnu.property NOTE            0000000000000000 000098 000020 00   A  0   0  8
-  [ 9] .eh_frame         PROGBITS        0000000000000000 0000b8 000038 00   A  0   0  8
-  [10] .rela.eh_frame    RELA            0000000000000000 0001c8 000018 18   I 11   9  8
-  [11] .symtab           SYMTAB          0000000000000000 0000f0 000090 18     12   4  8
-  [12] .strtab           STRTAB          0000000000000000 000180 000013 00      0   0  1
-  [13] .shstrtab         STRTAB          0000000000000000 0001e0 000074 00      0   0  1
+  [ 6] .debug_info       PROGBITS        0000000000000000 00006b 00008c 00      0   0  1
+  [ 7] .rela.debug_info  RELA            0000000000000000 000530 000180 18   I 20   6  8
+  [ 8] .debug_abbrev     PROGBITS        0000000000000000 0000f7 000043 00      0   0  1
+  [ 9] .debug_aranges    PROGBITS        0000000000000000 00013a 000030 00      0   0  1
+  [10] .rela.debug_aranges RELA            0000000000000000 0006b0 000030 18   I 20   9  8
+  [11] .debug_line       PROGBITS        0000000000000000 00016a 000052 00      0   0  1
+  [12] .rela.debug_line  RELA            0000000000000000 0006e0 000060 18   I 20  11  8
+  [13] .debug_str        PROGBITS        0000000000000000 0001bc 0000f7 01  MS  0   0  1
+  [14] .debug_line_str   PROGBITS        0000000000000000 0002b3 0000a2 01  MS  0   0  1
+  [15] .comment          PROGBITS        0000000000000000 000355 00002c 01  MS  0   0  1
+  [16] .note.GNU-stack   PROGBITS        0000000000000000 000381 000000 00      0   0  1
+  [17] .note.gnu.property NOTE            0000000000000000 000388 000020 00   A  0   0  8
+  [18] .eh_frame         PROGBITS        0000000000000000 0003a8 000038 00   A  0   0  8
+  [19] .rela.eh_frame    RELA            0000000000000000 000740 000018 18   I 20  18  8
+  [20] .symtab           SYMTAB          0000000000000000 0003e0 000108 18     21   9  8
+  [21] .strtab           STRTAB          0000000000000000 0004e8 000013 00      0   0  1
+  [22] .shstrtab         STRTAB          0000000000000000 000758 0000d3 00      0   0  1
 Key to Flags:
   W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
   L (link order), O (extra OS processing required), G (group), T (TLS),
@@ -78,15 +89,22 @@ hello.o：     文件格式 elf64-x86-64
 Disassembly of section .text:
 
 0000000000000000 <main>:
+#include <stdio.h>
+int main()
+{
    0:	f3 0f 1e fa          	endbr64 
    4:	55                   	push   %rbp
    5:	48 89 e5             	mov    %rsp,%rbp
+	printf("hello world!\n");
    8:	48 8d 05 00 00 00 00 	lea    0x0(%rip),%rax        # f <main+0xf>
    f:	48 89 c7             	mov    %rax,%rdi
   12:	e8 00 00 00 00       	call   17 <main+0x17>
+	return 0;
   17:	b8 00 00 00 00       	mov    $0x0,%eax
+}
   1c:	5d                   	pop    %rbp
-  1d:	c3                   	ret   
+  1d:	c3                   	ret    
+
 ```
 
 1. push %rbp origin value to protect register status.
